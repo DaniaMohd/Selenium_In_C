@@ -2,13 +2,40 @@
 using OpenQA.Selenium.Chrome;
 using OpenQA.Selenium.Support.UI;
 using System;
+using System.Linq.Expressions;
+
+// We now extract out the code for Logging into the Site.
+class LoginPage
+{
+    private IWebDriver driver;
+    public string loginPageURL = "https://opensource-demo.orangehrmlive.com/";
+
+    // Dependency Injection
+    // To declare to anyone that this class relies on or needs a Driver
+    public LoginPage(IWebDriver driver)
+    {
+        this.driver = driver;
+    }
+
+
+    public void Login(string username, string password)
+    {
+        IWebElement usernameElement = driver.FindElement(By.Name("username"));
+        IWebElement passwordElement = driver.FindElement(By.Name("password"));
+        IWebElement loginButton = driver.FindElement(By.CssSelector("button[type='submit']"));
+
+        // Enter credentials
+        usernameElement.SendKeys(username);
+        passwordElement.SendKeys(password);
+        loginButton.Click();
+    }
+}
 
 class Program
 {
-    // MVP Minimum Viable Product
-    // at least the selenium driver works
-    // it compiles
-    // it can login
+    // SRP Single Responsibility Principle
+    // Every Class should have one responsibility
+
     static void Main()
     {
         // Start chrome browser
@@ -37,49 +64,80 @@ class Program
         // So instead of always sleeping for 30 seconds, once the response was received 
         // we don't have to keep sleeping and are able to continue the code.
 
+        // Initialise Login Page Testing
+        var loginPage = new LoginPage(driver);
+
         // Open a website
-        driver.Navigate().GoToUrl("https://opensource-demo.orangehrmlive.com/");
+        driver.Navigate().GoToUrl(loginPage.loginPageURL);
 
-        /** THIS SECTION IS ATTEMPT AT EXPLICIT WAIT; WE WILL CHECK WHY IT DOESN'T WORK LATER
-        // Set up explicit wait
-        WebDriverWait wait = new WebDriverWait(driver, TimeSpan.FromSeconds(30));
+        // Log in with correct username and password
+        // For future reference, usernames and passwords should be stored in
+        // environment variables and not stored in plaintext or in code like this!
+        loginPage.Login("Admin", "admin123");
 
-        // Wait for username input to appear
-        IWebElement username = wait.Until(d => d.FindElement(By.Name("username")));
-        IWebElement password = wait.Until(d => d.FindElement(By.Name("password")));
-        IWebElement loginButton = wait.Until(d => d.FindElement(By.CssSelector("button[type='submit']")));
-        **/
+        // By encapsulating the code responsibile for logging into the page into a class, 
+        // Its cleaner now, and modular! You could test failed log ins in the future with this.
 
-        IWebElement username = driver.FindElement(By.Name("username")); 
-        IWebElement password = driver.FindElement(By.Name("password")); 
-        IWebElement loginButton = driver.FindElement(By.CssSelector("button[type='submit']")); 
+        // Not sure how to encapsulate this part of the code for SRP purposes
+        // For future improvement. 
+
+        // We now try to see if login was successful by finding the header "Dashboard"
+        // If we made it to the Dashboard, we were successful!
+        try
+        {
+            // XPath is a query language that can be used to search for and locate elements in XML and HTML documents.
+            // XPath is the preferred locator when other CSS locators (ID, Class, etc.)cannot be found.
+            driver.FindElement(By.XPath("//h6[text()='Dashboard']"));
+            Console.WriteLine("Login successful (dashboard check)!");
+        }
+        catch
+        {
+            Console.WriteLine("Failed to Login!");
+        }
+
+        // Go To Maintenance Page
+        IWebElement maintenanceMenu = driver.FindElement(By.LinkText("Maintenance"));
+        Console.WriteLine("Maintenance menu found.");
+        maintenanceMenu.Click();
+
+        // Login to Maintenance Page
+        IWebElement passwordElement = driver.FindElement(By.Name("password"));
+        IWebElement loginButton = driver.FindElement(By.CssSelector("button[type='submit']"));
 
         // Enter credentials
-        username.SendKeys("Admin");
-        password.SendKeys("admin123");
+        passwordElement.SendKeys("admin123");
         loginButton.Click();
 
+        try
+        {
+            // We now look if we are in Maintenance Page
+            driver.FindElement(By.XPath("//h6[text()='Maintenance']"));
+            Console.WriteLine("Successful login to Maintenance Page");
+        }
+        catch (NoSuchElementException)
+        {
+            Console.WriteLine("Could not login to Maintenance Page");
+        }
 
-        //// 🏃‍♂️ Click profile dropdown
-        //IWebElement profileIcon = wait.Until(d => d.FindElement(By.CssSelector(".oxd-userdropdown-tab")));
-        //profileIcon.Click();
+        // Finally, we want to log out.
 
-        //// 🏃‍♂️ Click Logout
-        //var logoutButton = wait.Until(d => d.FindElement(By.XPath("//a[text()='Logout']")));
-        //logoutButton.Click();
+        // Click profile dropdown
+        IWebElement profileIcon = driver.FindElement(By.CssSelector(".oxd-userdropdown-tab"));
+        profileIcon.Click();
 
-        ////// Wait for a few seconds for results to load
-        ////System.Threading.Thread.Sleep(3000);
-
-        //// Confirm logout by waiting for login page again
-        //wait.Until(d =>
-        //{
-        //    var usernameField = d.FindElement(By.CssSelector("input[name='username']"));
-        //    return (usernameField.Displayed && usernameField.Enabled) ? usernameField : null;
-        //});
-        //Console.WriteLine("✅ Successfully logged out.");
+        try
+        {
+            // Click Logout
+            var logoutButton = driver.FindElement(By.XPath("//a[text()='Logout']"));
+            logoutButton.Click();
 
 
+            Console.WriteLine("Logout Successful!");
+        }
+        catch (NoSuchElementException)
+        {
+            Console.WriteLine("Logout Failed");
+        }
 
         // Close the browser
         driver.Quit();
