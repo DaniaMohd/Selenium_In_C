@@ -5,9 +5,13 @@ using System;
 
 class Program
 {
+    // MVP Minimum Viable Product
+    // at least the selenium driver works
+    // it compiles
+    // it can login
     static void Main()
     {
-        // start chrome browser
+        // Start chrome browser
         IWebDriver driver = new ChromeDriver();
 
         // Now the naive way to wait for the page to load is to sleep for a few seconds.
@@ -46,17 +50,14 @@ class Program
         IWebElement loginButton = wait.Until(d => d.FindElement(By.CssSelector("button[type='submit']")));
         **/
 
-        IWebElement username = driver.FindElement(By.Name("username"));
-        IWebElement password = driver.FindElement(By.Name("password"));
-        IWebElement loginButton = driver.FindElement(By.CssSelector("button[type='submit']"));
+        IWebElement username = driver.FindElement(By.Name("username")); 
+        IWebElement password = driver.FindElement(By.Name("password")); 
+        IWebElement loginButton = driver.FindElement(By.CssSelector("button[type='submit']")); 
 
         // Enter credentials
         username.SendKeys("Admin");
         password.SendKeys("admin123");
         loginButton.Click();
-
-        // Wait for a few seconds for results to load
-        System.Threading.Thread.Sleep(3000);
 
 
         //// 🏃‍♂️ Click profile dropdown
